@@ -55,9 +55,10 @@ ynh_app_setting_set $app path $path_url
 #=================================================
 # FIND AND OPEN A PORT
 #=================================================
+ynh_script_progression --message="Configuring firewall..." --time --weight=1
 
 port=$(ynh_find_port 9001)	# Look for an available port
-ynh_app_setting_set $app port $port
+ynh_app_setting_set --app=$app --key=port --value=$port
 
 #=================================================
 # INSTALL NODEJS
@@ -68,22 +69,27 @@ ynh_exec_warn_less ynh_install_nodejs --nodejs_version=$nodejs_version
 #=================================================
 # DOWNLOAD, CHECK AND UNPACK SOURCE
 #=================================================
+ynh_script_progression --message="Setting up source files..." --time --weight=1
 
-ynh_app_setting_set $app final_path $final_path
-ynh_setup_source "$final_path"	# Download, check integrity and uncompress the source from app.src
+ynh_app_setting_set --app=$app --key=final_path --value=$final_path
+# Download, check integrity, uncompress and patch the source from app.src
+ynh_setup_source --dest_dir="$final_path"
 
 #=================================================
 # NGINX CONFIGURATION
 #=================================================
 
 ynh_replace_string "__PATH__/" "${path_url%/}/" "../conf/nginx.conf"
+
 ynh_add_nginx_config
 
 #=================================================
 # CREATE DEDICATED USER
 #=================================================
+ynh_script_progression --message="Configuring system user..." --time --weight=1
 
-ynh_system_user_create $app $final_path
+# Create a system user
+ynh_system_user_create --username=$app
 
 #=================================================
 # SPECIFIC SETUP
@@ -106,7 +112,7 @@ ynh_use_logrotate
 #=================================================
 
 # Install dependencies and proceed with the installation
-(cd $final_path && PATH=$nodedir:$PATH npm install --production > $install_log 2>&1)
+(cd $final_path && npm install --production > $install_log 2>&1)
 
 #=================================================
 # CONFIGURE
