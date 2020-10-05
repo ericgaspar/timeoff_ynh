@@ -141,7 +141,7 @@ chmod 600 "$final_path/config/db.json"	# Restrict access to db.json
 #=================================================
 
 #ynh_replace_string "__NODEJS__" "$nodejs_use_version" "../conf/systemd.service"
-ynh_replace_string "__NODE_DIR__" "$nodedir" "../conf/systemd.service"
+#ynh_replace_string "__NODE_DIR__" "$nodedir" "../conf/systemd.service"
 ynh_replace_string "__PORT__" "$port" "../conf/systemd.service"
 ynh_replace_string "__FINAL_PATH__" "$final_path" "../conf/systemd.service"
 ynh_add_systemd_config
