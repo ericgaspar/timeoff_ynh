@@ -14,7 +14,6 @@ source /usr/share/yunohost/helpers
 #=================================================
 
 ynh_clean_setup () {
-# Nettoyage des résidus d'installation non pris en charge par le script remove.
 	ynh_clean_check_starting
 }
 ynh_abort_if_errors	# Active trap pour arrêter le script si une erreur est détectée.
@@ -114,7 +113,7 @@ ynh_script_progression --message="Building $app... (this will take some time and
 
 pushd "$final_path" || ynh_die	
 	ynh_use_nodejs
-	ynh_exec_warn_less npm install
+	ynh_exec_warn_less npm install --unsafe-perm
 popd || ynh_die
 
 #=================================================
