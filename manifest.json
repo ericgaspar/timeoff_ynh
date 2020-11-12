@@ -5,7 +5,7 @@
 	"description": {
 		"en": "Open source, simple yet powerful absence management software for small and medium size business."
 	},
-	"version": "1.0.0~ynh1",
+	"version": "0.10.0~ynh1",
 	"url": "https://timeoff.management/",
 	"license": "MIT",
 	"maintainer": {
@@ -13,7 +13,7 @@
 		"email": "ju@paraiso.me"
 	},
 	"requirements": {
-		"yunohost": ">= 3.8.1"
+		"yunohost": ">= 4.0.0"
 	},
 	"multi_instance": false,
 	"services": [
