@@ -11,7 +11,7 @@ If you don't have YunoHost, please consult [the guide](https://yunohost.org/#/in
 ## Overview
 Open source, simple yet powerful absence management software for small and medium sized businesses.
 
-**Shipped version:** 1.0.0
+**Shipped version:** 0.10.0
 
 ## Screenshots
 

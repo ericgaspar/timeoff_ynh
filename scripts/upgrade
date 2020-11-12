@@ -12,6 +12,7 @@ source /usr/share/yunohost/helpers
 #=================================================
 # LOAD SETTINGS
 #=================================================
+ynh_script_progression --message="Loading installation settings..." --time --weight=1
 
 app=$YNH_APP_INSTANCE_NAME
 
@@ -24,21 +25,42 @@ port=$(ynh_app_setting_get $app port)
 # CHECK VERSION
 #=================================================
 
-# Wait for etherpad to be fully started
-# ynh_check_starting "You can access your Etherpad instance at" "/var/log/$app/etherpad.log" "120"
+upgrade_type=$(ynh_check_app_version_changed)
 
-ynh_abort_if_up_to_date
+#=================================================
+# ENSURE DOWNWARD COMPATIBILITY
+#=================================================
+ynh_script_progression --message="Ensuring downward compatibility..." --time --weight=1
+
+# Fix is_public as a boolean value
+if [ "$is_public" = "Yes" ]; then
+	ynh_app_setting_set --app=$app --key=is_public --value=1
+	is_public=1
+elif [ "$is_public" = "No" ]; then
+	ynh_app_setting_set --app=$app --key=is_public --value=0
+	is_public=0
+fi
+
+# If db_name doesn't exist, create it
+if [ -z "$db_name" ]; then
+	db_name=$(ynh_sanitize_dbid --db_name=$app)
+	ynh_app_setting_set --app=$app --key=db_name --value=$db_name
+fi
+
+# If final_path doesn't exist, create it
+if [ -z "$final_path" ]; then
+	final_path=/var/www/$app
+	ynh_app_setting_set --app=$app --key=final_path --value=$final_path
+fi
 
 #=================================================
 # BACKUP BEFORE UPGRADE THEN ACTIVE TRAP
 #=================================================
+ynh_script_progression --message="Backing up the app before upgrading (may take a while)..." --time --weight=1
 
 # Backup the current version of the app
 ynh_backup_before_upgrade
 ynh_clean_setup () {
-	# Cleanup installatioNettoyage des résidus d'installation non pris en charge par le script remove.
-	ynh_clean_check_starting
-
 	# restore it if the upgrade fails
 	ynh_restore_upgradebackup
 }
@@ -46,24 +68,32 @@ ynh_clean_setup () {
 ynh_abort_if_errors
 
 #=================================================
-# STOP ETHERPAD
-#=================================================
-
-systemctl stop $app
-
-#=================================================
 # STANDARD UPGRADE STEPS
+#=================================================
+# STOP SYSTEMD SERVICE
+#=================================================
+ynh_script_progression --message="Stopping a systemd service..." --time --weight=1
+
+ynh_systemd_action --service_name=$app --action="stop" --log_path="/var/log/$app/$app.log"
+
 #=================================================
 # DOWNLOAD, CHECK AND UNPACK SOURCE
 #=================================================
 
-ynh_setup_source "$final_path"	# Download, check integrity and uncompress the source from app.src
+if [ "$upgrade_type" == "UPGRADE_APP" ]
+then
+	ynh_script_progression --message="Upgrading source files..." --time --weight=1
+
+	# Download, check integrity, uncompress and patch the source from app.src
+	ynh_setup_source --dest_dir="$final_path"
+fi
 
 #=================================================
 # NGINX CONFIGURATION
 #=================================================
+ynh_script_progression --message="Upgrading nginx web server configuration..." --time --weight=1
 
-ynh_replace_string "__PATH__/" "${path_url%/}/" "../conf/nginx.conf"
+# Create a dedicated nginx config
 ynh_add_nginx_config
 
 #=================================================
@@ -119,6 +149,7 @@ chown $app -R /var/log/$app/timeoff.log
 #=================================================
 # SETUP LOGROTATE
 #=================================================
+ynh_script_progression --message="Upgrading logrotate configuration..." --time --weight=1
 
 ynh_use_logrotate --non-append
 
@@ -135,7 +166,22 @@ ynh_add_systemd_config
 systemctl restart $app.service
 
 #=================================================
+# INTEGRATE SERVICE IN YUNOHOST
+#=================================================
+ynh_script_progression --message="Integrating service in YunoHost..." --time --weight=1
+
+yunohost service add $app --description "A short description of the app" --log "/var/log/$app/$app.log"
+
+#=================================================
 # RELOAD NGINX
 #=================================================
+ynh_script_progression --message="Reloading nginx web server..." --time --weight=1
 
-systemctl reload nginx
+ynh_systemd_action --service_name=nginx --action=reload
+
+#=================================================
+# END OF SCRIPT
+#=================================================
+
+ynh_script_progression --message="Upgrade of $app completed" --time --last
+

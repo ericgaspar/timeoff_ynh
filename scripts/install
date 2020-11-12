@@ -16,7 +16,7 @@ source /usr/share/yunohost/helpers
 ynh_clean_setup () {
 	ynh_clean_check_starting
 }
-ynh_abort_if_errors	# Active trap pour arrêter le script si une erreur est détectée.
+ynh_abort_if_errors
 
 #=================================================
 # RETRIEVE ARGUMENTS FROM THE MANIFEST
@@ -73,8 +73,6 @@ ynh_setup_source --dest_dir="$final_path"
 #=================================================
 # NGINX CONFIGURATION
 #=================================================
-
-#ynh_replace_string "__PATH__/" "${path_url%/}/" "../conf/nginx.conf"
 
 ynh_add_nginx_config
 
@@ -152,6 +150,13 @@ ynh_add_systemd_config
 ynh_script_progression --message="Integrating service in YunoHost..." --weight=1
 
 yunohost service add $app --description "A short description of the app" --log "/var/log/$app/$app.log"
+
+#=================================================
+# START SYSTEMD SERVICE
+#=================================================
+ynh_script_progression --message="Starting a systemd service..." --time --weight=1
+
+ynh_systemd_action --service_name=$app --action="start" --log_path="/var/log/$app/$app.log"
 
 #=================================================
 # SETUP FAIL2BAN

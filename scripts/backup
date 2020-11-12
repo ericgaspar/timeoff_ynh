@@ -39,7 +39,6 @@ ynh_print_info --message="Declaring files to be backed up..."
 # BACKUP OF THE MAIN DIR OF THE APP
 #=================================================
 
-CHECK_SIZE "$final_path"
 ynh_backup --src_path="$final_path"
 
 #=================================================
